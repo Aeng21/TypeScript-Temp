@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Buat Akun</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f4f4f4;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        input,
+        select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: -6px;
+        }
+
+        button {
+            padding: 10px;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #1e7e34;
+        }
+
+        .link-row {
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .link-row a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .backLink {
+            display: inline-block;
+            margin-top: 20px;
+            color: #007bff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>📝 Buat Akun</h2>
+        <form id="formRegister">
+            <label for="username">Username</label>
+            <input type="text" id="username" placeholder="Username" required />
+
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Minimal 6 karakter" required minlength="6" />
+
+            <label for="role">Daftar sebagai</label>
+            <select id="role" required>
+                <option value="customer">Customer</option>
+                <option value="admin">Admin</option>
+            </select>
+
+            <button type="submit">Buat Akun</button>
+        </form>
+        <div class="link-row">
+            Sudah punya akun? <a href="/src/auth/login.html">Login</a>
+        </div>
+        <a href="http://localhost:2001/index.html" class="backLink">← Kembali ke Beranda</a>
+    </div>
+
+    <script type="module" src="/src/auth/register.ts"></script>
+</body>
+
+</html>

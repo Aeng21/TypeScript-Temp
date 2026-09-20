@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f4f4f4;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        .menu a {
+            display: inline-block;
+            margin: 10px 8px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .menu a:hover {
+            background: #0056b3;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 24px;
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>🛒 Dashboard Customer</h2>
+        <p id="welcomeText">Memuat...</p>
+        <div class="menu">
+            <a href="/src/keranjang/menuju-keranjang.html">Belanja</a>
+        </div>
+        <br />
+        <button id="btnLogout">Logout</button>
+    </div>
+
+    <script type="module" src="/src/auth/customer.ts"></script>
+</body>
+
+</html>

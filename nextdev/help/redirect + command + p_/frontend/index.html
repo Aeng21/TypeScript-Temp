@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Keranjang</title>
+    <title>Manajemen Minecraft</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,7 +13,7 @@
         }
 
         .container {
-            max-width: 500px;
+            max-width: 600px;
             margin: 0 auto;
             background: #fff;
             padding: 30px;
@@ -22,27 +22,34 @@
             text-align: center;
         }
 
-        h2 {
+        h1 {
             color: #333;
         }
 
-        .backLink {
+        .menu a {
             display: inline-block;
-            margin-top: 20px;
-            color: #007bff;
+            margin: 10px 15px;
+            padding: 12px 30px;
+            background: #007bff;
+            color: #fff;
             text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .menu a:hover {
+            background: #0056b3;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h2>🛒 Keranjang Belanja</h2>
-        <p id="welcomeText">Memuat...</p>
-        <a href="/index.html" class="backLink">← Kembali ke Beranda</a>
+        <div class="menu">
+            <a href="http://localhost:2001/src/auth/login.html">🔒 Login</a>
+            <a href="http://localhost:2001/src/keranjang/menuju-keranjang.html">🛍️ Belanja</a>
+        </div>
     </div>
-
-    <script type="module" src="/src/keranjang/keranjang.ts"></script>
 </body>
 
 </html>

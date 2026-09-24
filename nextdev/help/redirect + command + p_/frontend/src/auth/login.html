@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Buat Akun</title>
+    <title>Login</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -33,22 +33,15 @@
             margin-top: 20px;
         }
 
-        input,
-        select {
+        input {
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
 
-        label {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: -6px;
-        }
-
         button {
             padding: 10px;
-            background: #28a745;
+            background: #007bff;
             color: #fff;
             border: none;
             border-radius: 4px;
@@ -57,7 +50,7 @@
         }
 
         button:hover {
-            background: #1e7e34;
+            background: #0056b3;
         }
 
         .link-row {
@@ -81,29 +74,19 @@
 
 <body>
     <div class="container">
-        <h2>📝 Buat Akun</h2>
-        <form id="formRegister">
-            <label for="username">Username</label>
+        <h2>🔒 Login</h2>
+        <form id="formLogin">
             <input type="text" id="username" placeholder="Username" required />
-
-            <label for="password">Password</label>
-            <input type="password" id="password" placeholder="Minimal 6 karakter" required minlength="6" />
-
-            <label for="role">Daftar sebagai</label>
-            <select id="role" required>
-                <option value="customer">Customer</option>
-                <option value="admin">Admin</option>
-            </select>
-
-            <button type="submit">Buat Akun</button>
+            <input type="password" id="password" placeholder="Password" required />
+            <button type="submit">Login</button>
         </form>
         <div class="link-row">
-            Sudah punya akun? <a href="/src/auth/login.html">Login</a>
+            Belum punya akun? <a href="/src/auth/register.html">Buat akun</a>
         </div>
-        <a href="/index.html" class="backLink">← Kembali ke Beranda</a>
+        <a href="http://localhost:2001/index.html" class="backLink">← Kembali ke Beranda</a>
     </div>
 
-    <script type="module" src="/src/auth/register.ts"></script>
+    <script type="module" src="/src/auth/login.ts"></script>
 </body>
 
 </html>

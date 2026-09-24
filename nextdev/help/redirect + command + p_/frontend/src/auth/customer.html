@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Belanja</title>
+    <title>Customer</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -26,10 +26,25 @@
             color: #333;
         }
 
+        .menu a {
+            display: inline-block;
+            margin: 10px 8px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .menu a:hover {
+            background: #0056b3;
+        }
+
         button {
             margin-top: 20px;
-            padding: 12px 30px;
-            background: #28a745;
+            padding: 10px 24px;
+            background: #dc3545;
             color: #fff;
             border: none;
             border-radius: 4px;
@@ -38,28 +53,23 @@
         }
 
         button:hover {
-            background: #1e7e34;
-        }
-
-        .backLink {
-            display: inline-block;
-            margin-top: 20px;
-            color: #007bff;
-            text-decoration: none;
+            background: #c82333;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h2>🛍️ Halaman Produk</h2>
-        <p>Halaman ini bisa dilihat siapa saja tanpa perlu login.</p>
-        <button id="btnTambahKeranjang">Tambah ke Keranjang</button>
+        <h2>🛒 Dashboard Customer</h2>
+        <p id="welcomeText">Memuat...</p>
+        <div class="menu">
+            <a href="/src/keranjang/menuju-keranjang.html">Belanja</a>
+        </div>
         <br />
-        <a href="/index.html" class="backLink">← Kembali ke Beranda</a>
+        <button id="btnLogout">Logout</button>
     </div>
 
-    <script type="module" src="/src/keranjang/menuju-keranjang.ts"></script>
+    <script type="module" src="/src/auth/customer.ts"></script>
 </body>
 
 </html>

@@ -1,9 +1,0 @@
-# File .env berisi kredensial asli (password database, session secret) — TIDAK BOLEH
-# ikut ter-commit ke git, supaya kredensial ini tidak bocor ke siapa pun yang bisa melihat
-# riwayat repository (termasuk repo yang sifatnya publik atau berpindah tangan di kemudian hari).
-# Contoh nama-nama variabel yang dibutuhkan tetap didokumentasikan di backend/.env.example.
-.env
-
-# node_modules bisa dibuat ulang kapan saja lewat 'npm install' berdasarkan package.json &
-# package-lock.json — tidak perlu (dan sangat besar/tidak praktis) untuk ikut di-commit.
-node_modules

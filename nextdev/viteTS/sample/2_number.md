@@ -153,26 +153,27 @@ static async update(id: number, data: Omit<Player, 'id'>): Promise<number> {
 }
 ```
 
-`controllers/playerController.ts`:
+`controllers/playerController.ts` — project ini sudah pakai validasi **Zod** (`playerSchema`), bukan lagi `if (!nama || umur === undefined)` manual. Cukup tambah field baru ke skema yang sudah ada:
 ```ts
-static async create(req: Request, res: Response): Promise<void> {
-    const { nama, alamat, rank, umur } = req.body as Omit<Player, 'id'>;    // <- BAGIAN INI
-    if (!nama || !alamat || !rank || umur === undefined) {                  // <- BAGIAN INI
-        res.status(400).json({ success: false, message: 'Data harus diisi' });
-        return;
-    }
-    const id = await PlayerModel.create({ nama, alamat, rank, umur });      // <- BAGIAN INI
-    res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, umur } }); // <- BAGIAN INI
-}
-
-static async update(req: Request, res: Response): Promise<void> {
-    const { nama, alamat, rank, umur } = req.body as Omit<Player, 'id'>;    // <- BAGIAN INI
-    // ...validasi & pemanggilan PlayerModel.update sama pola-nya seperti create
-}
+const playerSchema = z.object({
+  nama: z.string().trim().min(1, 'Nama wajib diisi').max(100, 'Nama maksimal 100 karakter'),
+  alamat: z.string().trim().min(1, 'Alamat wajib diisi').max(100, 'Alamat maksimal 100 karakter'),
+  rank: z.string().trim().min(1, 'Rank wajib diisi').max(100, 'Rank maksimal 100 karakter'),
+  umur: z.number('Umur harus berupa angka').int('Umur harus bilangan bulat').min(0, 'Umur tidak boleh negatif').max(150, 'Umur tidak masuk akal'), // <- BAGIAN INI
+});
 ```
+`z.number()` menolak string/`NaN`/desimal-tak-wajar secara otomatis — beda dengan `umur === undefined` lama yang tetap lolos kalau `umur` dikirim string kosong `''` (bukan `undefined`) atau angka negatif/tidak masuk akal.
+
+Di `create()` dan `update()`, tinggal tambahkan `umur` ke destructuring `parsed.data`, ke pemanggilan `PlayerModel.create`/`update`, dan ke response `data`:
+```ts
+const { nama, alamat, rank, umur } = parsed.data;                                                                        // <- BAGIAN INI
+const id = await PlayerModel.create({ nama, alamat, rank, umur });                                                       // <- BAGIAN INI
+res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, umur } }); // <- BAGIAN INI
+```
+Lakukan hal yang sama di dalam `update()`.
 
 ## Status pengujian
-✅ Sudah dicoba end-to-end (frontend & backend `tsc --noEmit`) — bersih.
+✅ Skema Zod di atas sudah dites lewat type-check gabungan (`tsc --noEmit`) memakai `tsconfig.json` backend yang sama — sintaksnya valid untuk Zod v4 dan cocok dengan pola `playerSchema` yang sudah ada di `backend/src/controllers/playerController.ts`. Belum dites end-to-end lewat request HTTP sungguhan — tetap coba manual (Postman/curl/form) setelah diterapkan.
 
 ## Catatan
 - Header `<th>Umur</th>` dan `colspan` pada baris "Belum ada data" di `player.html` perlu disesuaikan manual, sample tidak menyebutkannya.

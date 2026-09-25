@@ -154,26 +154,31 @@ static async update(p_id: number, p_docu: Omit<Player, 'id'>): Promise<number> {
 }
 ```
 
-`controllers/playerController.ts`:
+`controllers/playerController.ts` — project ini sudah pakai validasi **Zod** lewat skema `playerInputSchema` + helper `validatePlayerInput()`, bukan lagi `if (!nama || ...)` manual. Cukup tambah field baru ke skema yang sudah ada:
 ```ts
-static async create(p_req: Request, p_res: Response): Promise<void> {
-    const { nama, alamat, rank, email } = p_req.body as Omit<Player, 'id'>;   // <- BAGIAN INI
-    if (!nama || !alamat || !rank || !email) {                             // <- BAGIAN INI
-        p_res.status(400).json({ success: false, message: 'Data harus diisi' });
-        return;
-    }
-    const id = await PlayerModel.create({ nama, alamat, rank, email });     // <- BAGIAN INI
-    p_res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, email } }); // <- BAGIAN INI
-}
-
-static async update(p_req: Request, p_res: Response): Promise<void> {
-    const { nama, alamat, rank, email } = p_req.body as Omit<Player, 'id'>;   // <- BAGIAN INI
-    // ...validasi & pemanggilan PlayerModel.update sama pola-nya seperti create
-}
+const playerInputSchema = z.object({
+  nama: z.string().trim().min(1, 'nama tidak boleh kosong').max(100, 'nama maksimal 100 karakter'),
+  alamat: z.string().trim().min(1, 'alamat tidak boleh kosong').max(100, 'alamat maksimal 100 karakter'),
+  rank: z.string().trim().min(1, 'rank tidak boleh kosong').max(100, 'rank maksimal 100 karakter'),
+  // .email() bawaan Zod mengecek format alamat email (harus ada "@" dan domain yang wajar) —
+  // menolak string sembarangan yang lolos validasi teks biasa tapi jelas bukan email.
+  // .max(255) sengaja disamakan dengan tipe kolom VARCHAR(255) di database (lihat ALTER TABLE
+  // di atas), supaya email kepanjangan ditolak DI SINI dengan pesan jelas, bukan dipotong diam-diam
+  // atau bikin query gagal di MySQL.
+  email: z.string().trim().min(1, 'email tidak boleh kosong').max(255, 'email maksimal 255 karakter').email('format email tidak valid'), // <- BAGIAN INI
+});
 ```
 
+`validatePlayerInput()` sendiri TIDAK perlu diubah (dia otomatis ikut memvalidasi field apa pun yang ada di `playerInputSchema`). Di `create()` dan `update()`, tinggal tambahkan `email` ke destructuring `validasi.data`, ke pemanggilan `PlayerModel.create`/`update`, dan ke response `data`:
+```ts
+const { nama, alamat, rank, email } = validasi.data;                                                                        // <- BAGIAN INI
+const id = await PlayerModel.create({ nama, alamat, rank, email });                                                         // <- BAGIAN INI
+p_res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, email } }); // <- BAGIAN INI
+```
+Lakukan hal yang sama (tambah `email` ke `validasi.data`, ke `PlayerModel.update`, dan ke response) di dalam `update()`.
+
 ## Status pengujian
-✅ Sudah dicoba end-to-end (frontend & backend `tsc --noEmit`) di salinan project terisolasi — bersih, tidak ada error.
+✅ Skema Zod di atas sudah dites lewat type-check gabungan (`tsc --noEmit`) memakai `tsconfig.json` backend yang sama — sintaksnya valid untuk Zod v4 dan cocok dengan pola `playerInputSchema`/`validatePlayerInput()` yang sudah ada di `backend/src/controllers/playerController.ts`. Belum dites end-to-end lewat request HTTP sungguhan — tetap coba manual (Postman/curl/form) setelah diterapkan.
 
 ## Catatan
 - Sample ini menambah kolom baru di tabel, tapi tidak menyebutkan penyesuaian `<th>Email</th>` di header tabel (`frontend/player.html`) maupun `colspan="5"` pada baris "Belum ada data" di `renderData()`. Ubah manual jadi `colspan="6"` dan tambah header kolom supaya tabel tetap rapi.

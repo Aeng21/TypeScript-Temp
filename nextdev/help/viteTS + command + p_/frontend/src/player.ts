@@ -169,6 +169,9 @@ function escapeHtml(p_value: string): string {
 }
 
 // Menerima array data dan membuat baris tabel + tombol aksi
+// p_docu bertipe 'any[]' (bukan 'Player[]') karena file frontend ini berdiri sendiri, tidak
+// mengimpor interface Player dari backend (dua project/proses terpisah) — jadi bentuk datanya
+// tidak divalidasi TypeScript di sini, cuma diasumsikan sesuai hasil JSON dari API.
 function renderData(p_docu: any[]) {
     // Jika data kosong, tampilkan pesan
     if (!p_docu || p_docu.length === 0) {
@@ -251,13 +254,10 @@ formTambah.addEventListener('submit', (p_e) => {
     const nama = namaTambah.value.trim();
     const alamat = alamatTambah.value.trim();
     const rank = rankTambah.value.trim();
-    // !nama =
-    // false
-    // 0
-    // ""
-    // null
-    // undefined
-    // NaN
+    // !nama bernilai true (lolos ke dalam if) kalau nama termasuk salah satu nilai "falsy"
+    // di JavaScript: false, 0, "" (string kosong), null, undefined, atau NaN.
+    // Di sini yang relevan cuma "" (string kosong) — .trim() di atas memastikan input yang
+    // isinya cuma spasi (misal "   ") juga dianggap kosong, karena spasi tidak lolos .trim().
     if (!nama || !alamat || !rank) {
         alert('Semua field harus diisi!');
         return;

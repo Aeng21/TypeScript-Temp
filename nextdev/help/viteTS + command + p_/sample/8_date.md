@@ -176,21 +176,36 @@ static async update(p_id: number, p_docu: Omit<Player, 'id'>): Promise<number> {
 }
 ```
 
-`controllers/playerController.ts`:
+`controllers/playerController.ts` — project ini sudah pakai validasi **Zod** lewat `playerInputSchema`, bukan lagi `if (!tanggalLahir)` manual (yang cuma menolak string kosong, tapi tetap meloloskan format ngawur seperti `"32 Januari"` atau `"besok"`). Validasi format `'YYYY-MM-DD'` + pastikan tanggalnya benar-benar valid:
 ```ts
-static async create(p_req: Request, p_res: Response): Promise<void> {
-    const { nama, alamat, rank, tanggalLahir } = p_req.body as Omit<Player, 'id'>;   // <- BAGIAN INI
-    if (!nama || !alamat || !rank || !tanggalLahir) {                             // <- BAGIAN INI
-        p_res.status(400).json({ success: false, message: 'Data harus diisi' });
-        return;
-    }
-    const id = await PlayerModel.create({ nama, alamat, rank, tanggalLahir });     // <- BAGIAN INI
-    p_res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, tanggalLahir } }); // <- BAGIAN INI
-}
+const playerInputSchema = z.object({
+  nama: z.string().trim().min(1, 'nama tidak boleh kosong').max(100, 'nama maksimal 100 karakter'),
+  alamat: z.string().trim().min(1, 'alamat tidak boleh kosong').max(100, 'alamat maksimal 100 karakter'),
+  rank: z.string().trim().min(1, 'rank tidak boleh kosong').max(100, 'rank maksimal 100 karakter'),
+  tanggalLahir: z                                                              // <- BAGIAN INI
+    .string()                                                                  // <- BAGIAN INI
+    // Regex ini memastikan formatnya PERSIS 4 digit tahun - 2 digit bulan - 2 digit tanggal
+    // (sesuai yang selalu dikirim <input type="date">), menolak format lain seperti "01/01/2024"
+    // yang lolos validasi lama "if (!tanggalLahir)" selama tidak kosong.
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'format tanggal harus YYYY-MM-DD')           // <- BAGIAN INI
+    // Regex di atas cuma mengecek BENTUK teksnya, belum tentu tanggalnya beneran ada di kalender
+    // (misal "2024-02-30" tetap lolos regex, padahal Februari tidak pernah punya tanggal 30).
+    // .refine() menjalankan pengecekan tambahan bebas: Date.parse() mengembalikan NaN kalau
+    // tanggalnya tidak valid, jadi !isNaN(...) berarti "tanggalnya beneran ada".
+    .refine((val) => !isNaN(Date.parse(val)), 'tanggal tidak valid'),          // <- BAGIAN INI
+});
 ```
 
+`validatePlayerInput()` sendiri TIDAK perlu diubah. Di `create()` dan `update()`, tinggal tambahkan `tanggalLahir` ke destructuring `validasi.data`, ke pemanggilan `PlayerModel.create`/`update`, dan ke response `data`:
+```ts
+const { nama, alamat, rank, tanggalLahir } = validasi.data;                                                                        // <- BAGIAN INI
+const id = await PlayerModel.create({ nama, alamat, rank, tanggalLahir });                                                         // <- BAGIAN INI
+p_res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, tanggalLahir } }); // <- BAGIAN INI
+```
+Lakukan hal yang sama di dalam `update()`.
+
 ## Status pengujian
-✅ Sudah dicoba end-to-end (frontend & backend `tsc --noEmit`, termasuk verifikasi opsi `dateStrings` ke source `mysql2` yang ter-install) — bersih.
+✅ Skema Zod di atas sudah dites lewat type-check gabungan (`tsc --noEmit`) memakai `tsconfig.json` backend yang sama — sintaksnya valid untuk Zod v4 dan cocok dengan pola `playerInputSchema`/`validatePlayerInput()` yang sudah ada di `backend/src/controllers/playerController.ts`. Belum dites end-to-end lewat request HTTP sungguhan (termasuk belum diverifikasi ulang ke source `mysql2`) — tetap coba manual (Postman/curl/form) setelah diterapkan.
 
 ## Catatan
 - Header `<th>` dan `colspan` di `player.html` perlu disesuaikan manual seperti sample lain yang menambah kolom.

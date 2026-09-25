@@ -176,21 +176,29 @@ static async update(id: number, data: Omit<Player, 'id'>): Promise<number> {
 }
 ```
 
-`controllers/playerController.ts`:
+`controllers/playerController.ts` — project ini sudah pakai validasi **Zod** (`playerSchema`), bukan lagi `if (!tanggalLahir)` manual (yang cuma menolak string kosong, tapi tetap meloloskan format ngawur seperti `"32 Januari"` atau `"besok"`). Validasi format `'YYYY-MM-DD'` + pastikan tanggalnya benar-benar valid (bukan cuma cocok pola regex, misal `2024-02-30` tidak ada di kalender):
 ```ts
-static async create(req: Request, res: Response): Promise<void> {
-    const { nama, alamat, rank, tanggalLahir } = req.body as Omit<Player, 'id'>;   // <- BAGIAN INI
-    if (!nama || !alamat || !rank || !tanggalLahir) {                             // <- BAGIAN INI
-        res.status(400).json({ success: false, message: 'Data harus diisi' });
-        return;
-    }
-    const id = await PlayerModel.create({ nama, alamat, rank, tanggalLahir });     // <- BAGIAN INI
-    res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, tanggalLahir } }); // <- BAGIAN INI
-}
+const playerSchema = z.object({
+  nama: z.string().trim().min(1, 'Nama wajib diisi').max(100, 'Nama maksimal 100 karakter'),
+  alamat: z.string().trim().min(1, 'Alamat wajib diisi').max(100, 'Alamat maksimal 100 karakter'),
+  rank: z.string().trim().min(1, 'Rank wajib diisi').max(100, 'Rank maksimal 100 karakter'),
+  tanggalLahir: z                                                              // <- BAGIAN INI
+    .string()                                                                  // <- BAGIAN INI
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal harus YYYY-MM-DD')           // <- BAGIAN INI
+    .refine((val) => !isNaN(Date.parse(val)), 'Tanggal tidak valid'),          // <- BAGIAN INI
+});
 ```
 
+Di `create()` dan `update()`, tinggal tambahkan `tanggalLahir` ke destructuring `parsed.data`, ke pemanggilan `PlayerModel.create`/`update`, dan ke response `data`:
+```ts
+const { nama, alamat, rank, tanggalLahir } = parsed.data;                                                                        // <- BAGIAN INI
+const id = await PlayerModel.create({ nama, alamat, rank, tanggalLahir });                                                       // <- BAGIAN INI
+res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, tanggalLahir } }); // <- BAGIAN INI
+```
+Lakukan hal yang sama di dalam `update()`.
+
 ## Status pengujian
-✅ Sudah dicoba end-to-end (frontend & backend `tsc --noEmit`, termasuk verifikasi opsi `dateStrings` ke source `mysql2` yang ter-install) — bersih.
+✅ Skema Zod di atas sudah dites lewat type-check gabungan (`tsc --noEmit`) memakai `tsconfig.json` backend yang sama — sintaksnya valid untuk Zod v4 dan cocok dengan pola `playerSchema` yang sudah ada di `backend/src/controllers/playerController.ts`. Belum dites end-to-end lewat request HTTP sungguhan (termasuk belum diverifikasi ulang ke source `mysql2`) — tetap coba manual (Postman/curl/form) setelah diterapkan.
 
 ## Catatan
 - Header `<th>` dan `colspan` di `player.html` perlu disesuaikan manual seperti sample lain yang menambah kolom.

@@ -4,9 +4,10 @@ import db from '../config/database.js';
 
 // Mengimpor tipe data dari mysql2 untuk membantu TypeScript memahami hasil query.
 // RowDataPacket: tipe untuk baris hasil SELECT (data mentah dari tabel).
-// OkPacket: tipe untuk hasil operasi INSERT/UPDATE/DELETE (biasanya berisi info seperti affectedRows).
-// ResultSetHeader: tipe yang lebih spesifik untuk hasil INSERT/UPDATE/DELETE, mengandung insertId, affectedRows, dll.
-import { RowDataPacket, OkPacket, ResultSetHeader } from 'mysql2';
+// ResultSetHeader: tipe untuk hasil operasi INSERT/UPDATE/DELETE, mengandung insertId, affectedRows, dll.
+// (mysql2 juga punya tipe 'OkPacket' untuk keperluan sama, tapi tidak dipakai di file ini
+// supaya tidak ada import yang menganggur/tidak terpakai.)
+import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 // Interface untuk data Player
 // bisa digunakan dengan implements untuk memastikan class mengikuti interface

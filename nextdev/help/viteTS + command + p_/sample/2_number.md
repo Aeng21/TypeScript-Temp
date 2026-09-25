@@ -153,26 +153,31 @@ static async update(p_id: number, p_docu: Omit<Player, 'id'>): Promise<number> {
 }
 ```
 
-`controllers/playerController.ts`:
+`controllers/playerController.ts` — project ini sudah pakai validasi **Zod** lewat skema `playerInputSchema` + helper `validatePlayerInput()`, bukan lagi `if (!nama || umur === undefined)` manual. Cukup tambah field baru ke skema yang sudah ada:
 ```ts
-static async create(p_req: Request, p_res: Response): Promise<void> {
-    const { nama, alamat, rank, umur } = p_req.body as Omit<Player, 'id'>;    // <- BAGIAN INI
-    if (!nama || !alamat || !rank || umur === undefined) {                  // <- BAGIAN INI
-        p_res.status(400).json({ success: false, message: 'Data harus diisi' });
-        return;
-    }
-    const id = await PlayerModel.create({ nama, alamat, rank, umur });      // <- BAGIAN INI
-    p_res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, umur } }); // <- BAGIAN INI
-}
-
-static async update(p_req: Request, p_res: Response): Promise<void> {
-    const { nama, alamat, rank, umur } = p_req.body as Omit<Player, 'id'>;    // <- BAGIAN INI
-    // ...validasi & pemanggilan PlayerModel.update sama pola-nya seperti create
-}
+const playerInputSchema = z.object({
+  nama: z.string().trim().min(1, 'nama tidak boleh kosong').max(100, 'nama maksimal 100 karakter'),
+  alamat: z.string().trim().min(1, 'alamat tidak boleh kosong').max(100, 'alamat maksimal 100 karakter'),
+  rank: z.string().trim().min(1, 'rank tidak boleh kosong').max(100, 'rank maksimal 100 karakter'),
+  // z.number() menolak kalau tipe datanya BUKAN number (misal string "25" yang lupa di-convert) —
+  // beda dengan validasi lama "umur === undefined" yang cuma mengecek field-nya ADA atau TIDAK,
+  // tanpa peduli tipe/nilainya. .int() menolak desimal (mis. 25.5, tidak masuk akal untuk umur).
+  // .min(0)/.max(150) menolak angka negatif atau angka yang tidak masuk akal sebagai umur manusia.
+  umur: z.number('umur harus berupa angka').int('umur harus bilangan bulat').min(0, 'umur tidak boleh negatif').max(150, 'umur tidak masuk akal'), // <- BAGIAN INI
+});
 ```
+`z.number()` menolak string/`NaN`/desimal-tak-wajar secara otomatis — beda dengan `umur === undefined` lama yang tetap lolos kalau `umur` dikirim string kosong `''` (bukan `undefined`) atau angka negatif/tidak masuk akal.
+
+`validatePlayerInput()` sendiri TIDAK perlu diubah. Di `create()` dan `update()`, tinggal tambahkan `umur` ke destructuring `validasi.data`, ke pemanggilan `PlayerModel.create`/`update`, dan ke response `data`:
+```ts
+const { nama, alamat, rank, umur } = validasi.data;                                                                        // <- BAGIAN INI
+const id = await PlayerModel.create({ nama, alamat, rank, umur });                                                         // <- BAGIAN INI
+p_res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, umur } }); // <- BAGIAN INI
+```
+Lakukan hal yang sama di dalam `update()`.
 
 ## Status pengujian
-✅ Sudah dicoba end-to-end (frontend & backend `tsc --noEmit`) — bersih.
+✅ Skema Zod di atas sudah dites lewat type-check gabungan (`tsc --noEmit`) memakai `tsconfig.json` backend yang sama — sintaksnya valid untuk Zod v4 dan cocok dengan pola `playerInputSchema`/`validatePlayerInput()` yang sudah ada di `backend/src/controllers/playerController.ts`. Belum dites end-to-end lewat request HTTP sungguhan — tetap coba manual (Postman/curl/form) setelah diterapkan.
 
 ## Catatan
 - Header `<th>Umur</th>` dan `colspan` pada baris "Belum ada data" di `player.html` perlu disesuaikan manual, sample tidak menyebutkannya.

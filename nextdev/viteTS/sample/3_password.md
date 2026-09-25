@@ -162,22 +162,47 @@ static async update(id: number, data: Omit<Player, 'id' | 'password'> & { passwo
 }
 ```
 
-`controllers/playerController.ts`:
+`controllers/playerController.ts` — project ini sudah pakai validasi **Zod** (`playerSchema`), bukan lagi `if (!nama || !password)` manual. Password butuh aturan sendiri (wajib diisi saat create, boleh kosong saat update = tidak diubah), jadi dibuat 2 skema turunan dari `playerSchema` yang sudah ada, pakai `.extend()`:
 ```ts
-static async create(req: Request, res: Response): Promise<void> {
-    const { nama, alamat, rank, password } = req.body as Omit<Player, 'id'>;   // <- BAGIAN INI
-    if (!nama || !alamat || !rank || !password) {                              // <- BAGIAN INI
-        res.status(400).json({ success: false, message: 'Data harus diisi' });
-        return;
-    }
-    const id = await PlayerModel.create({ nama, alamat, rank, password });      // <- BAGIAN INI
-    // Jangan pernah kirim balik password (walau sudah di-hash) di response!
-    res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank } });
+const passwordSchema = z                                                    // <- BAGIAN INI
+    .string()                                                               // <- BAGIAN INI
+    .min(8, 'Password minimal 8 karakter')                                  // <- BAGIAN INI
+    .regex(/[A-Za-z]/, 'Password harus mengandung huruf')                   // <- BAGIAN INI
+    .regex(/[0-9]/, 'Password harus mengandung angka');                     // <- BAGIAN INI
+
+const playerCreateSchema = playerSchema.extend({ password: passwordSchema });              // <- BAGIAN INI (wajib diisi)
+const playerUpdateSchema = playerSchema.extend({ password: passwordSchema.optional() });    // <- BAGIAN INI (opsional = tidak diubah)
+```
+Aturan panjang minimal 8 karakter + wajib ada huruf & angka ini persis sama dengan yang dipakai `registerSchema` di project auth (`redirect/backend`) — konsisten satu standar untuk semua password di seluruh template.
+
+Di `create()`, ganti pemanggilan `playerSchema.safeParse(req.body)` **menjadi** `playerCreateSchema.safeParse(req.body)` (password wajib ada di sini):
+```ts
+const parsed = playerCreateSchema.safeParse(req.body);                     // <- BAGIAN INI (bukan playerSchema lagi)
+if (!parsed.success) {
+    res.status(400).json({ success: false, message: parsed.error.issues.map((issue) => issue.message).join(', ') });
+    return;
 }
+const { nama, alamat, rank, password } = parsed.data;                      // <- BAGIAN INI
+const id = await PlayerModel.create({ nama, alamat, rank, password });     // <- BAGIAN INI
+// Jangan pernah kirim balik password (walau sudah di-hash) di response!
+res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank } });
+```
+
+Di `update()`, ganti pemanggilan `playerSchema.safeParse(req.body)` **menjadi** `playerUpdateSchema.safeParse(req.body)` (password boleh tidak dikirim = tidak diubah):
+```ts
+const parsed = playerUpdateSchema.safeParse(req.body);                     // <- BAGIAN INI (bukan playerSchema lagi)
+if (!parsed.success) {
+    res.status(400).json({ success: false, message: parsed.error.issues.map((issue) => issue.message).join(', ') });
+    return;
+}
+const { nama, alamat, rank, password } = parsed.data;                      // <- BAGIAN INI (password: string | undefined)
+const affectedRows = await PlayerModel.update(id, { nama, alamat, rank, password });   // <- BAGIAN INI
+// Jangan pernah kirim balik password di response di sini juga.
+res.status(200).json({ success: true, message: 'Player berhasil diupdate', data: { id, nama, alamat, rank } });
 ```
 
 ## Status pengujian
-✅ Sudah dicoba end-to-end di salinan project terisolasi (bcrypt di-install khusus untuk pengujian, `tsc --noEmit` backend bersih).
+✅ Skema Zod di atas (termasuk `.extend()` untuk password opsional saat update) sudah dites lewat type-check gabungan (`tsc --noEmit`) memakai `tsconfig.json` backend yang sama — sintaksnya valid untuk Zod v4. Belum dites end-to-end lewat request HTTP sungguhan dengan bcrypt sungguhan terpasang — tetap coba manual (Postman/curl/form) setelah diterapkan.
 
 ## Catatan keamanan
 - Ini satu-satunya sample yang menyimpan data sensitif — jangan skip bagian `SELECT` eksplisit di atas, ini bukan opsional.

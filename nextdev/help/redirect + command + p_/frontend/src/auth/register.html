@@ -87,7 +87,13 @@
             <input type="text" id="username" placeholder="Username" required />
 
             <label for="password">Password</label>
-            <input type="password" id="password" placeholder="Minimal 6 karakter" required minlength="6" />
+            <!-- minlength="8" dan placeholder ini WAJIB cocok dengan aturan asli di
+                 backend/src/controllers/authController.ts (registerPasswordSchema) dan
+                 pengecekan ulang di register.ts: minimal 8 karakter + wajib ada huruf & angka.
+                 minlength di sini cuma hint tampilan (native browser validation), BUKAN validasi
+                 sungguhan — aturan "harus ada huruf & angka" tidak bisa dicek pakai minlength saja,
+                 makanya tetap dicek manual lagi di register.ts sebelum data dikirim ke server. -->
+            <input type="password" id="password" placeholder="Minimal 8 karakter, wajib ada huruf & angka" required minlength="8" />
 
             <label for="role">Daftar sebagai</label>
             <select id="role" required>

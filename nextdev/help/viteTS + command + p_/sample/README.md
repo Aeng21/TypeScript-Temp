@@ -14,6 +14,7 @@ Tiap file `N_nama.ts` di folder ini adalah dokumentasi (bukan kode yang langsung
 | 8 | Date / tanggal | `8_date.ts` | [8_date.md](8_date.md) |
 
 ## Catatan umum untuk semua sample
+- Bagian "3. Backend" tiap sample mengasumsikan `backend/src/controllers/playerController.ts` yang sudah pakai validasi **Zod** (`playerInputSchema` + `validatePlayerInput()`), sesuai kondisi project saat ini — bukan lagi validasi manual `if (!field)`. Kalau backend-mu masih versi lama (manual check), sesuaikan dulu ke pola Zod sebelum ikut sample di sini.
 - Semua sample menambah kolom baru ke tabel `player` — jalankan `ALTER TABLE` yang disebutkan di masing-masing README sebelum test, kolom tidak otomatis ada.
 - Semua sample yang menambahkan kolom ke tabel juga menambah `<td>` baru di `renderData()`, tapi tidak menyebutkan penambahan `<th>` header yang sesuai di `player.html` maupun penyesuaian `colspan="5"` pada baris "Belum ada data" — sesuaikan manual jadi `colspan="6"` (atau sesuai jumlah kolom akhir) supaya tabel tetap rapi.
-- Semua sample sudah diverifikasi dengan benar-benar diterapkan ke salinan project dan dicek pakai `tsc --noEmit` (frontend & backend) — bukan hanya dibaca sekilas.
+- Bagian HTML/Frontend TS tiap sample sudah diverifikasi dengan diterapkan ke salinan project dan dicek pakai `tsc --noEmit`. Bagian Backend (skema Zod) baru dites lewat type-check gabungan atas semua tipe validator baru — belum diterapkan end-to-end satu-satu ke salinan project asli, cek "Status pengujian" di tiap file untuk detailnya.

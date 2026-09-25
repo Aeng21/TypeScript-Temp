@@ -162,21 +162,28 @@ static async update(p_id: number, p_docu: Omit<Player, 'id'>): Promise<number> {
 }
 ```
 
-`controllers/playerController.ts`:
+`controllers/playerController.ts` — project ini sudah pakai validasi **Zod** lewat `playerInputSchema`, bukan lagi `if (!kota)` manual. Karena opsinya tetap (sesuai HTML: Jakarta/Bandung/Surabaya), pakai `z.enum` supaya kota di luar daftar otomatis ditolak:
 ```ts
-static async create(p_req: Request, p_res: Response): Promise<void> {
-    const { nama, alamat, rank, kota } = p_req.body as Omit<Player, 'id'>;   // <- BAGIAN INI
-    if (!nama || !alamat || !rank || !kota) {                             // <- BAGIAN INI
-        p_res.status(400).json({ success: false, message: 'Data harus diisi' });
-        return;
-    }
-    const id = await PlayerModel.create({ nama, alamat, rank, kota });     // <- BAGIAN INI
-    p_res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, kota } }); // <- BAGIAN INI
-}
+const playerInputSchema = z.object({
+  nama: z.string().trim().min(1, 'nama tidak boleh kosong').max(100, 'nama maksimal 100 karakter'),
+  alamat: z.string().trim().min(1, 'alamat tidak boleh kosong').max(100, 'alamat maksimal 100 karakter'),
+  rank: z.string().trim().min(1, 'rank tidak boleh kosong').max(100, 'rank maksimal 100 karakter'),
+  // Sama seperti jenisKelamin (lihat 4_radio.md): z.enum menolak kota di luar 3 pilihan yang ada
+  // di <select> HTML, bukan cuma mengecek field-nya kosong atau tidak seperti validasi lama.
+  kota: z.enum(['Jakarta', 'Bandung', 'Surabaya'], { message: 'kota harus salah satu dari pilihan yang tersedia' }), // <- BAGIAN INI
+});
 ```
 
+`validatePlayerInput()` sendiri TIDAK perlu diubah. Di `create()` dan `update()`, tinggal tambahkan `kota` ke destructuring `validasi.data`, ke pemanggilan `PlayerModel.create`/`update`, dan ke response `data`:
+```ts
+const { nama, alamat, rank, kota } = validasi.data;                                                                        // <- BAGIAN INI
+const id = await PlayerModel.create({ nama, alamat, rank, kota });                                                         // <- BAGIAN INI
+p_res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, kota } }); // <- BAGIAN INI
+```
+Lakukan hal yang sama di dalam `update()`.
+
 ## Status pengujian
-✅ Sudah dicoba end-to-end (frontend & backend `tsc --noEmit`) — bersih.
+✅ Skema Zod di atas sudah dites lewat type-check gabungan (`tsc --noEmit`) memakai `tsconfig.json` backend yang sama — sintaksnya valid untuk Zod v4 dan cocok dengan pola `playerInputSchema`/`validatePlayerInput()` yang sudah ada di `backend/src/controllers/playerController.ts`. Belum dites end-to-end lewat request HTTP sungguhan — tetap coba manual (Postman/curl/form) setelah diterapkan.
 
 ## Catatan
 - Header `<th>` dan `colspan` di `player.html` perlu disesuaikan manual seperti sample lain yang menambah kolom.

@@ -165,21 +165,27 @@ static async update(id: number, data: Omit<Player, 'id'>): Promise<number> {
 }
 ```
 
-`controllers/playerController.ts`:
+`controllers/playerController.ts` — project ini sudah pakai validasi **Zod** (`playerSchema`), bukan lagi `if (!nama || !alamat || !rank)` manual yang tidak mengecek `isActive` sama sekali. Tambahkan ke skema yang sudah ada:
 ```ts
-static async create(req: Request, res: Response): Promise<void> {
-    const { nama, alamat, rank, isActive } = req.body as Omit<Player, 'id'>;   // <- BAGIAN INI
-    if (!nama || !alamat || !rank) {
-        res.status(400).json({ success: false, message: 'Data harus diisi' });
-        return;
-    }
-    const id = await PlayerModel.create({ nama, alamat, rank, isActive: !!isActive });   // <- BAGIAN INI
-    res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, isActive } }); // <- BAGIAN INI
-}
+const playerSchema = z.object({
+  nama: z.string().trim().min(1, 'Nama wajib diisi').max(100, 'Nama maksimal 100 karakter'),
+  alamat: z.string().trim().min(1, 'Alamat wajib diisi').max(100, 'Alamat maksimal 100 karakter'),
+  rank: z.string().trim().min(1, 'Rank wajib diisi').max(100, 'Rank maksimal 100 karakter'),
+  isActive: z.boolean('isActive harus berupa boolean (true/false)'), // <- BAGIAN INI
+});
 ```
+Karena `isActive` sekarang divalidasi Zod sebagai boolean sungguhan, konversi manual `!!isActive` yang lama sudah tidak diperlukan lagi — `parsed.data.isActive` sudah pasti `boolean`, bukan nilai lain yang cuma "dipaksa" jadi boolean.
+
+Di `create()` dan `update()`, tinggal tambahkan `isActive` ke destructuring `parsed.data`, ke pemanggilan `PlayerModel.create`/`update`, dan ke response `data`:
+```ts
+const { nama, alamat, rank, isActive } = parsed.data;                                                                        // <- BAGIAN INI
+const id = await PlayerModel.create({ nama, alamat, rank, isActive });                                                       // <- BAGIAN INI (tanpa !! lagi)
+res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, isActive } }); // <- BAGIAN INI
+```
+Lakukan hal yang sama di dalam `update()`.
 
 ## Status pengujian
-✅ Sudah dicoba end-to-end (frontend & backend `tsc --noEmit`) — bersih.
+✅ Skema Zod di atas sudah dites lewat type-check gabungan (`tsc --noEmit`) memakai `tsconfig.json` backend yang sama — sintaksnya valid untuk Zod v4 dan cocok dengan pola `playerSchema` yang sudah ada di `backend/src/controllers/playerController.ts`. Belum dites end-to-end lewat request HTTP sungguhan — tetap coba manual (Postman/curl/form) setelah diterapkan.
 
 ## Catatan
 - Header `<th>` dan `colspan` di `player.html` perlu disesuaikan manual seperti sample lain yang menambah kolom.

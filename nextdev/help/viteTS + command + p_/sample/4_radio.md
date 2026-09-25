@@ -166,21 +166,30 @@ static async update(p_id: number, p_docu: Omit<Player, 'id'>): Promise<number> {
 }
 ```
 
-`controllers/playerController.ts`:
+`controllers/playerController.ts` — project ini sudah pakai validasi **Zod** lewat `playerInputSchema`, bukan lagi `if (!jenisKelamin)` manual. Karena opsinya cuma 2 nilai tetap (sesuai HTML: `'pria'`/`'wanita'`), pakai `z.enum` supaya nilai lain (misal dikirim langsung lewat Postman tanpa lewat form) otomatis ditolak:
 ```ts
-static async create(p_req: Request, p_res: Response): Promise<void> {
-    const { nama, alamat, rank, jenisKelamin } = p_req.body as Omit<Player, 'id'>;   // <- BAGIAN INI
-    if (!nama || !alamat || !rank || !jenisKelamin) {                             // <- BAGIAN INI
-        p_res.status(400).json({ success: false, message: 'Data harus diisi' });
-        return;
-    }
-    const id = await PlayerModel.create({ nama, alamat, rank, jenisKelamin });     // <- BAGIAN INI
-    p_res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, jenisKelamin } }); // <- BAGIAN INI
-}
+const playerInputSchema = z.object({
+  nama: z.string().trim().min(1, 'nama tidak boleh kosong').max(100, 'nama maksimal 100 karakter'),
+  alamat: z.string().trim().min(1, 'alamat tidak boleh kosong').max(100, 'alamat maksimal 100 karakter'),
+  rank: z.string().trim().min(1, 'rank tidak boleh kosong').max(100, 'rank maksimal 100 karakter'),
+  // z.enum HANYA menerima nilai yang ada di daftar ('pria'/'wanita', sesuai value radio di HTML).
+  // Kalau field ini pakai z.string() biasa (seperti validasi lama "if (!jenisKelamin)"), seseorang
+  // yang mengirim request langsung tanpa lewat form (misal lewat Postman/curl) bisa mengisi nilai
+  // apa saja, mis. "alien", dan tetap lolos karena stringnya "ada isinya".
+  jenisKelamin: z.enum(['pria', 'wanita'], { message: 'jenis kelamin harus pria atau wanita' }), // <- BAGIAN INI
+});
 ```
 
+`validatePlayerInput()` sendiri TIDAK perlu diubah. Di `create()` dan `update()`, tinggal tambahkan `jenisKelamin` ke destructuring `validasi.data`, ke pemanggilan `PlayerModel.create`/`update`, dan ke response `data`:
+```ts
+const { nama, alamat, rank, jenisKelamin } = validasi.data;                                                                        // <- BAGIAN INI
+const id = await PlayerModel.create({ nama, alamat, rank, jenisKelamin });                                                         // <- BAGIAN INI
+p_res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, jenisKelamin } }); // <- BAGIAN INI
+```
+Lakukan hal yang sama di dalam `update()`.
+
 ## Status pengujian
-✅ Sudah diperbaiki dan diverifikasi ulang — `tsc --noEmit` frontend & backend bersih.
+✅ Skema Zod di atas sudah dites lewat type-check gabungan (`tsc --noEmit`) memakai `tsconfig.json` backend yang sama — sintaksnya valid untuk Zod v4 dan cocok dengan pola `playerInputSchema`/`validatePlayerInput()` yang sudah ada di `backend/src/controllers/playerController.ts`. Belum dites end-to-end lewat request HTTP sungguhan — tetap coba manual (Postman/curl/form) setelah diterapkan.
 
 ## Riwayat bug yang sudah diperbaiki
 Versi sebelumnya dari sample ini **lupa** menyebutkan 2 poin yang ditandai ⚠️ PENTING di atas. Kalau itu kelewat: dengan TypeScript strict, akan muncul error `Expected 5 arguments, but got 4` di pemanggilan `openEditModal()` — tapi kalau dijalankan sebagai JavaScript longgar (tanpa type-check ketat), aplikasinya tetap jalan tanpa error, hanya saja `jenkel` diterima `undefined` sehingga radio di modal edit **diam-diam tidak ter-checklist otomatis** saat tombol Edit diklik. Sudah diperbaiki di `4_radio.ts` — pastikan kedua bagian itu ikut disalin.

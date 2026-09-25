@@ -166,21 +166,26 @@ static async update(id: number, data: Omit<Player, 'id'>): Promise<number> {
 }
 ```
 
-`controllers/playerController.ts`:
+`controllers/playerController.ts` — project ini sudah pakai validasi **Zod** (`playerSchema`), bukan lagi `if (!jenisKelamin)` manual. Karena opsinya cuma 2 nilai tetap (sesuai HTML: `'pria'`/`'wanita'`), pakai `z.enum` supaya nilai lain (misal dikirim langsung lewat Postman tanpa lewat form) otomatis ditolak — bukan cuma dicek "ada isinya atau tidak":
 ```ts
-static async create(req: Request, res: Response): Promise<void> {
-    const { nama, alamat, rank, jenisKelamin } = req.body as Omit<Player, 'id'>;   // <- BAGIAN INI
-    if (!nama || !alamat || !rank || !jenisKelamin) {                             // <- BAGIAN INI
-        res.status(400).json({ success: false, message: 'Data harus diisi' });
-        return;
-    }
-    const id = await PlayerModel.create({ nama, alamat, rank, jenisKelamin });     // <- BAGIAN INI
-    res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, jenisKelamin } }); // <- BAGIAN INI
-}
+const playerSchema = z.object({
+  nama: z.string().trim().min(1, 'Nama wajib diisi').max(100, 'Nama maksimal 100 karakter'),
+  alamat: z.string().trim().min(1, 'Alamat wajib diisi').max(100, 'Alamat maksimal 100 karakter'),
+  rank: z.string().trim().min(1, 'Rank wajib diisi').max(100, 'Rank maksimal 100 karakter'),
+  jenisKelamin: z.enum(['pria', 'wanita'], { message: 'Jenis kelamin harus pria atau wanita' }), // <- BAGIAN INI
+});
 ```
 
+Di `create()` dan `update()`, tinggal tambahkan `jenisKelamin` ke destructuring `parsed.data`, ke pemanggilan `PlayerModel.create`/`update`, dan ke response `data`:
+```ts
+const { nama, alamat, rank, jenisKelamin } = parsed.data;                                                                        // <- BAGIAN INI
+const id = await PlayerModel.create({ nama, alamat, rank, jenisKelamin });                                                       // <- BAGIAN INI
+res.status(201).json({ success: true, message: 'Player berhasil ditambahkan', data: { id, nama, alamat, rank, jenisKelamin } }); // <- BAGIAN INI
+```
+Lakukan hal yang sama di dalam `update()`.
+
 ## Status pengujian
-✅ Sudah diperbaiki dan diverifikasi ulang — `tsc --noEmit` frontend & backend bersih.
+✅ Skema Zod di atas sudah dites lewat type-check gabungan (`tsc --noEmit`) memakai `tsconfig.json` backend yang sama — sintaksnya valid untuk Zod v4 dan cocok dengan pola `playerSchema` yang sudah ada di `backend/src/controllers/playerController.ts`. Belum dites end-to-end lewat request HTTP sungguhan — tetap coba manual (Postman/curl/form) setelah diterapkan.
 
 ## Riwayat bug yang sudah diperbaiki
 Versi sebelumnya dari sample ini **lupa** menyebutkan 2 poin yang ditandai ⚠️ PENTING di atas. Kalau itu kelewat: dengan TypeScript strict, akan muncul error `Expected 5 arguments, but got 4` di pemanggilan `openEditModal()` — tapi kalau dijalankan sebagai JavaScript longgar (tanpa type-check ketat), aplikasinya tetap jalan tanpa error, hanya saja `jenkel` diterima `undefined` sehingga radio di modal edit **diam-diam tidak ter-checklist otomatis** saat tombol Edit diklik. Sudah diperbaiki di `4_radio.ts` — pastikan kedua bagian itu ikut disalin.
